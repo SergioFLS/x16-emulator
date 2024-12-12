@@ -427,24 +427,6 @@ cpuio_write(uint8_t reg, uint8_t value)
 	}
 }
 
-// Control the GIF recorder
-void
-emu_recorder_set(gif_recorder_command_t command)
-{
-	// turning off while recording is enabled
-	if (command == RECORD_GIF_PAUSE && record_gif != RECORD_GIF_DISABLED) {
-		record_gif = RECORD_GIF_PAUSED; // need to save
-	}
-	// turning on continuous recording
-	if (command == RECORD_GIF_RESUME && record_gif != RECORD_GIF_DISABLED) {
-		record_gif = RECORD_GIF_ACTIVE;		// activate recording
-	}
-	// capture one frame
-	if (command == RECORD_GIF_SNAP && record_gif != RECORD_GIF_DISABLED) {
-		record_gif = RECORD_GIF_SINGLE;		// single-shot
-	}
-}
-
 //
 // read/write emulator state (feature flags)
 //
@@ -453,8 +435,6 @@ emu_recorder_set(gif_recorder_command_t command)
 // 2: log_keyboard
 // 3: echo_mode
 // 4: save_on_exit
-// 5: record_gif
-// 6: record_wav
 // 7: cmd key toggle
 // 8: write: reset cpu clock counter
 // 8: read: snapshots cpu clock counter and reads the LSB bits 0-7
@@ -475,7 +455,6 @@ emu_write(uint8_t reg, uint8_t value)
 		case 2: log_keyboard = v; break;
 		case 3: echo_mode = value; break;
 		case 4: save_on_exit = v; break;
-		case 5: emu_recorder_set((gif_recorder_command_t) value); break;
 		case 7: disable_emu_cmd_keys = v; break;
 		case 8: clock_base = clockticks6502; break;
 		case 9: printf("User debug 1: $%02x\n", value); fflush(stdout); break;
@@ -508,8 +487,6 @@ emu_read(uint8_t reg, bool debugOn)
 		return echo_mode;
 	} else if (reg == 4) {
 		return save_on_exit ? 1 : 0;
-	} else if (reg == 5) {
-		return record_gif;
 	} else if (reg == 7) {
 		return disable_emu_cmd_keys ? 1 : 0;
 
