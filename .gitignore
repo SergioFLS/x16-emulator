@@ -13,6 +13,7 @@ rom.bin
 chargen.bin
 .vscode/
 .idea/
+__pycache__/
 x16emu.data
 x16emu.html
 x16emu.html.mem
