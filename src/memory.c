@@ -14,7 +14,6 @@
 #include "video.h"
 #include "ymglue.h"
 #include "cpu/fake6502.h"
-#include "wav_recorder.h"
 #include "audio.h"
 #include "cartridge.h"
 #include "iso_8859_15.h"
@@ -477,7 +476,6 @@ emu_write(uint8_t reg, uint8_t value)
 		case 3: echo_mode = value; break;
 		case 4: save_on_exit = v; break;
 		case 5: emu_recorder_set((gif_recorder_command_t) value); break;
-		case 6: wav_recorder_set((wav_recorder_command_t) value); break;
 		case 7: disable_emu_cmd_keys = v; break;
 		case 8: clock_base = clockticks6502; break;
 		case 9: printf("User debug 1: $%02x\n", value); fflush(stdout); break;
@@ -512,8 +510,6 @@ emu_read(uint8_t reg, bool debugOn)
 		return save_on_exit ? 1 : 0;
 	} else if (reg == 5) {
 		return record_gif;
-	} else if (reg == 6) {
-		return wav_recorder_get_state();
 	} else if (reg == 7) {
 		return disable_emu_cmd_keys ? 1 : 0;
 

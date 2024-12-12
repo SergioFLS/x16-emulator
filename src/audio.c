@@ -6,7 +6,6 @@
 #include "glue.h"
 #include "vera_psg.h"
 #include "vera_pcm.h"
-#include "wav_recorder.h"
 #include "ymglue.h"
 #include "midi.h"
 #include <stdint.h>
@@ -296,7 +295,6 @@ audio_render()
 		midi_synth_render(&fs_buf[pos * 2], len);
 	}
 
-	uint32_t wridx_old = wridx;
 	uint32_t len_vera = (vera_samp_pos_hd - vera_samp_pos_rd) & SAMP_POS_MASK_FRAC;
 	uint32_t len_ym = (ym_samp_pos_hd - ym_samp_pos_rd) & SAMP_POS_MASK_FRAC;
 	uint32_t len_fs = (fs_samp_pos_hd - fs_samp_pos_rd) & SAMP_POS_MASK_FRAC;
@@ -395,13 +393,8 @@ audio_render()
 		ym_samp_pos_rd = (ym_samp_pos_rd + ym_samps_per_host_samps) & SAMP_POS_MASK_FRAC;
 		fs_samp_pos_rd = (fs_samp_pos_rd + fs_samps_per_host_samps) & SAMP_POS_MASK_FRAC;
 		if (wridx == buffer_size) {
-			wav_recorder_process(&buffer[wridx_old], (buffer_size - wridx_old) / 2);
 			wridx = 0;
-			wridx_old = 0;
 		}
-	}
-	if ((wridx - wridx_old) > 0) {
-		wav_recorder_process(&buffer[wridx_old], (wridx - wridx_old) / 2);
 	}
 	buffer_written += len * 2;
 	if (buffer_written > buffer_size) {
