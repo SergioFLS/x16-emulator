@@ -101,7 +101,6 @@ bool log_keyboard = false;
 bool dump_cpu = false;
 bool dump_ram = true;
 bool dump_bank = true;
-bool dump_vram = false;
 bool warp_mode = false;
 bool warp_pastes = false;
 bool grab_mouse = false;
@@ -304,10 +303,6 @@ machine_dump(const char* reason)
 	}
 	memory_save(f, dump_ram, dump_bank);
 
-	if (dump_vram) {
-		video_save(f);
-	}
-
 	SDL_RWclose(f);
 	printf("Dumped system to %s.\n", filename);
 }
@@ -470,8 +465,8 @@ usage()
 	printf("\tPrints warning to stdout if uninitialized RAM is accessed\n");
 	printf("-memorystats <file.txt>\n");
 	printf("\tSaves memory access statistics to the given file when emulator exits\n");
-	printf("-dump {C|R|B|V}...\n");
-	printf("\tConfigure system dump: (C)PU, (R)AM, (B)anked-RAM, (V)RAM\n");
+	printf("-dump {C|R|B}...\n");
+	printf("\tConfigure system dump: (C)PU, (R)AM, (B)anked-RAM\n");
 	printf("\tMultiple characters are possible, e.g. -dump CV ; Default: RB\n");
 	printf("-joy1\n");
 	printf("\tEnable binding a gamepad to SNES controller port 1\n");
@@ -811,7 +806,6 @@ main(int argc, char **argv)
 			dump_cpu = false;
 			dump_ram = false;
 			dump_bank = false;
-			dump_vram = false;
 			for (char *p = argv[0]; *p; p++) {
 				switch (tolower(*p)) {
 					case 'c':
@@ -822,9 +816,6 @@ main(int argc, char **argv)
 						break;
 					case 'b':
 						dump_bank = true;
-						break;
-					case 'v':
-						dump_vram = true;
 						break;
 					default:
 						usage();

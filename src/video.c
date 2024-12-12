@@ -16,6 +16,7 @@
 #include "sdcard.h"
 #include "i2c.h"
 #include "audio.h"
+#include <SDL.h>
 
 #include <limits.h>
 #include <stdint.h>
@@ -1292,20 +1293,6 @@ video_get_irq_out()
 {
 	uint8_t tmp_isr = isr | (pcm_is_fifo_almost_empty() ? 8 : 0);
 	return (tmp_isr & ien) != 0;
-}
-
-//
-// saves the video memory and register content into a file
-//
-
-void
-video_save(SDL_RWops *f)
-{
-	SDL_RWwrite(f, &video_ram[0], sizeof(uint8_t), sizeof(video_ram));
-	SDL_RWwrite(f, &reg_composer[0], sizeof(uint8_t), sizeof(reg_composer));
-	SDL_RWwrite(f, &palette[0], sizeof(uint8_t), sizeof(palette));
-	SDL_RWwrite(f, &reg_layer[0][0], sizeof(uint8_t), sizeof(reg_layer));
-	SDL_RWwrite(f, &sprite_data[0], sizeof(uint8_t), sizeof(sprite_data));
 }
 
 bool
