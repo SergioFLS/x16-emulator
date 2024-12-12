@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <SDL.h>
 
 #define USE_CURRENT_BANK (-1)
 #define debug_read6502(a, b) real_read6502(a, true, b)
@@ -23,9 +22,6 @@ void memory_reset();
 void memory_report_uninitialized_access(bool);
 void memory_report_usage_statistics(const char *filename);
 void memory_randomize_ram(bool);
-
-void memory_save(SDL_RWops *f, bool dump_ram, bool dump_bank);
-void memory_dump_usage_counts();
 
 void memory_set_ram_bank(uint8_t bank);
 void memory_set_rom_bank(uint8_t bank);
