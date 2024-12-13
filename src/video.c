@@ -87,6 +87,7 @@ static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *sdlTexture;
 static bool is_fullscreen = false;
+static bool show_activity_led = false;
 bool mouse_grabbed = false;
 bool no_keyboard_capture = false;
 bool kernal_mouse_enabled = false;
@@ -307,7 +308,7 @@ video_reset()
 }
 
 bool
-video_init(int window_scale, float screen_x_scale, char *quality, bool fullscreen, float opacity)
+video_init(int window_scale, float screen_x_scale, char *quality, bool fullscreen, float opacity, bool activity_led)
 {
 	uint32_t window_flags = SDL_WINDOW_ALLOW_HIGHDPI;
 
@@ -361,6 +362,9 @@ video_init(int window_scale, float screen_x_scale, char *quality, bool fullscree
 	if (grab_mouse && !mouse_grabbed)
 		mousegrab_toggle();
 
+	if (activity_led) {
+		show_activity_led = true;
+	}
 	return true;
 }
 
@@ -1301,20 +1305,22 @@ video_update()
 	static bool cmd_down = false;
 	bool mouse_changed = false;
 
-	// for activity LED, overlay red 8x4 square into top right of framebuffer
-	// for progressive modes, draw LED only on even scanlines
-	for (int y = 0; y < 4; y+=1+!!((reg_composer[0] & 0x0b) > 0x09)) {
-		for (int x = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
-			uint8_t b = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 0];
-			uint8_t g = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 1];
-			uint8_t r = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 2];
-			r = (uint32_t)r * (255 - activity_led) / 255 + activity_led;
-			g = (uint32_t)g * (255 - activity_led) / 255;
-			b = (uint32_t)b * (255 - activity_led) / 255;
-			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 0] = b;
-			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 1] = g;
-			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 2] = r;
-			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 3] = 0x00;
+	if (show_activity_led) {
+		// for activity LED, overlay red 8x4 square into top right of framebuffer
+		// for progressive modes, draw LED only on even scanlines
+		for (int y = 0; y < 4; y+=1+!!((reg_composer[0] & 0x0b) > 0x09)) {
+			for (int x = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
+				uint8_t b = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 0];
+				uint8_t g = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 1];
+				uint8_t r = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 2];
+				r = (uint32_t)r * (255 - activity_led) / 255 + activity_led;
+				g = (uint32_t)g * (255 - activity_led) / 255;
+				b = (uint32_t)b * (255 - activity_led) / 255;
+				framebuffer[(y * SCREEN_WIDTH + x) * 4 + 0] = b;
+				framebuffer[(y * SCREEN_WIDTH + x) * 4 + 1] = g;
+				framebuffer[(y * SCREEN_WIDTH + x) * 4 + 2] = r;
+				framebuffer[(y * SCREEN_WIDTH + x) * 4 + 3] = 0x00;
+			}
 		}
 	}
 

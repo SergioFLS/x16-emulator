@@ -119,6 +119,7 @@ char *scale_quality = "best";
 bool test_init_complete=false;
 bool headless = false;
 bool fullscreen = false;
+bool show_activity_led = true;
 bool testbench = false;
 bool enable_midline = false;
 bool ym2151_irq_support = false;
@@ -450,6 +451,8 @@ usage()
 	printf("\tStretch output to 16:9 resolution to mimic display of a widescreen monitor.\n");
 	printf("-fullscreen\n");
 	printf("\tStart up in fullscreen mode instead of in a window.\n");
+	printf("-noactivityled\n");
+	printf("\tHide the disk activity LED shown at the top right corner.\n");
 	printf("-opacity (0.0,...,1.0)\n");
 	printf("\tSet the opacity value (0.0 for transparent, 1.0 for opaque) of the window. (default: %.1f)\n", window_opacity);
 	printf("-debug [<address>]\n");
@@ -930,6 +933,10 @@ main(int argc, char **argv)
 			argc--;
 			argv++;
 			fullscreen = true;
+		} else if (!strcmp(argv[0], "-noactivityled")) {
+			argc--;
+			argv++;
+			show_activity_led = false;
 		} else if (!strcmp(argv[0], "-opacity")) {
 			argc--;
 			argv++;
@@ -1188,7 +1195,7 @@ main(int argc, char **argv)
 #endif
 		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 		audio_init(audio_dev_name, audio_buffers);
-		video_init(window_scale, screen_x_scale, scale_quality, fullscreen, window_opacity);
+		video_init(window_scale, screen_x_scale, scale_quality, fullscreen, window_opacity, show_activity_led);
 	}
 
 	memory_init();
