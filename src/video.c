@@ -207,8 +207,6 @@ mousegrab_toggle() {
 	SDL_SetWindowGrab(window, mouse_grabbed && !no_keyboard_capture);
 	SDL_SetRelativeMouseMode(mouse_grabbed);
 	SDL_ShowCursor((mouse_grabbed || kernal_mouse_enabled) ? SDL_DISABLE : SDL_ENABLE);
-	sprintf(window_title, WINDOW_TITLE "%s", mouse_grabbed ? MOUSE_GRAB_MSG : "");
-	video_update_title(window_title);
 }
 
 void
@@ -2218,12 +2216,6 @@ void video_write(uint8_t reg, uint8_t value) {
 			vera_spi_write(reg & 1, value);
 			break;
 	}
-}
-
-void
-video_update_title(const char* window_title)
-{
-	SDL_SetWindowTitle(window, window_title);
 }
 
 bool video_is_tilemap_address(int addr)
