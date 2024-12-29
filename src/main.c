@@ -48,8 +48,8 @@
 #include <pthread.h>
 #endif
 
-void *emulator_loop(void *param);
-void emscripten_main_loop(void);
+bool emulator_loop(void *param);
+void emulator_loop_noparams(void);
 
 // This must match the KERNAL's set!
 char *keymaps[] = {
@@ -1178,7 +1178,7 @@ main(int argc, char **argv)
 	SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0");
 #endif
 #ifdef __EMSCRIPTEN__
-	emscripten_set_main_loop(emscripten_main_loop, 0, 0);
+	emscripten_set_main_loop(emulator_loop_noparams, 0, 0);
 #endif
 	if (!headless) {
 		// Shows up in the power management area of Linux desktops of applications inhibiting the screensaver
@@ -1212,9 +1212,9 @@ main(int argc, char **argv)
 
 #ifdef __EMSCRIPTEN__
 	emscripten_cancel_main_loop();
-	emscripten_set_main_loop(emscripten_main_loop, 0, 1);
+	emscripten_set_main_loop(emulator_loop_noparams, 0, 1);
 #else
-	emulator_loop(NULL);
+	while (emulator_loop(NULL));
 #endif
 
 	main_shutdown();
@@ -1461,12 +1461,12 @@ handle_ieee_intercept()
 }
 
 void
-emscripten_main_loop(void) {
+emulator_loop_noparams(void) {
 	emulator_loop(NULL);
 }
 
 
-void *
+bool
 emulator_loop(void *param)
 {
 	uint32_t old_clockticks6502 = clockticks6502;
@@ -1637,7 +1637,7 @@ emulator_loop(void *param)
 			}
 
 			if (!video_update()) {
-				break;
+				return false;
 			}
 
 			timing_update();
@@ -1772,5 +1772,5 @@ emulator_loop(void *param)
 		}
 	}
 
-	return 0;
+	return true;
 }

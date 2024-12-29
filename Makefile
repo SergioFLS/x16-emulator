@@ -83,7 +83,7 @@ ifeq ($(FLUIDSYNTH),1)
 	CFLAGS+=-DHAS_FLUIDSYNTH
 endif
 
-_X16_OBJS = cpu/fake6502.o memory.o disasm.o video.o i2c.o smc.o rtc.o via.o serial.o ieee.o vera_spi.o audio.o vera_pcm.o vera_psg.o sdcard.o main.o debugger.o javascript_interface.o joystick.o rendertext.o keyboard.o icon.o timing.o testbench.o files.o cartridge.o iso_8859_15.o ymglue.o midi.o
+_X16_OBJS = cpu/fake6502.o memory.o disasm.o video.o i2c.o smc.o rtc.o via.o serial.o ieee.o vera_spi.o audio.o vera_pcm.o vera_psg.o sdcard.o main.o debugger.o javascript_interface.o joystick.o rendertext.o keyboard.o timing.o testbench.o files.o cartridge.o iso_8859_15.o ymglue.o midi.o
 _X16_OBJS += extern/ymfm/src/ymfm_opm.o
 
 ifdef TARGET_WIN32

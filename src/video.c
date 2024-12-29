@@ -12,7 +12,6 @@
 #include "vera_spi.h"
 #include "vera_psg.h"
 #include "vera_pcm.h"
-#include "icon.h"
 #include "sdcard.h"
 #include "i2c.h"
 #include "audio.h"
