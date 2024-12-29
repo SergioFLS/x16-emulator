@@ -331,7 +331,6 @@ video_init(int window_scale, float screen_x_scale, char *quality, bool fullscree
 									SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	SDL_SetWindowTitle(window, WINDOW_TITLE);
-	SDL_SetWindowIcon(window, CommanderX16Icon());
 	if (fullscreen) {
 		is_fullscreen = true;
 		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
