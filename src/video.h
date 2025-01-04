@@ -34,5 +34,6 @@ bool video_is_special_address(int addr);
 uint32_t video_get_address(uint8_t sel);
 uint32_t video_get_fx_accum(void);
 uint8_t video_get_dc_value(uint8_t reg);
+uint8_t* video_get_framebuffer(void);
 
 #endif

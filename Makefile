@@ -98,6 +98,12 @@ _MAKECART_OBJS = makecart.o files.o cartridge.o makecart_javascript_interface.o
 MAKECART_OBJS = $(patsubst %,$(X16_ODIR)/%,$(_MAKECART_OBJS))
 MAKECART_DEPS := $(MAKECART_OBJS:.o=.d)
 
+_LIBRETRO_OBJS = cpu/fake6502.o memory.o disasm.o video.o i2c.o smc.o rtc.o via.o serial.o ieee.o vera_spi.o audio.o vera_pcm.o vera_psg.o sdcard.o libretro.o debugger.o javascript_interface.o joystick.o rendertext.o keyboard.o timing.o testbench.o files.o cartridge.o iso_8859_15.o ymglue.o midi.o
+_LIBRETRO_OBJS += extern/ymfm/src/ymfm_opm.o
+
+LIBRETRO_OBJS = $(patsubst %,$(X16_ODIR)/%,$(_LIBRETRO_OBJS))
+LIBRETRO_DEPS := $(LIBRETRO_OBJS:.o=.d)
+
 .PHONY: all clean wasm
 all: x16emu makecart
 
@@ -118,6 +124,9 @@ makecart: $(MAKECART_OBJS)
 $(MAKECART_ODIR)/%.o: $(MAKECART_SDIR)/%.c
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CFLAGS) -c $< -MD -MT $@ -MF $(@:%o=%d) -o $@
+
+x16emu_libretro.so: $(LIBRETRO_OBJS)
+	$(CXX) -o x16emu_libretro.so -shared -Wl,--version-script=libretro_link.T -Wl,--no-undefined $(LIBRETRO_OBJS) $(LDFLAGS) $(LDEMU)
 
 cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c816.opcodes
 	cd cpu && python buildtables.py

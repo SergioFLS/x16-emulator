@@ -1503,6 +1503,12 @@ video_get_address(uint8_t sel)
 	return address & 0x1ffff;
 }
 
+uint8_t*
+video_get_framebuffer(void)
+{
+	return (uint8_t*)&framebuffer;
+}
+
 uint32_t
 get_and_inc_address(uint8_t sel, bool write)
 {

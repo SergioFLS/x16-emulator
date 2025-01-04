@@ -29,4 +29,6 @@ makecart.html.mem
 makecart.js
 makecart.wasm
 makecart.worker.js
+x16emu_libretro.so
+x16emu_libretro.dll
 test*.bin
