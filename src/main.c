@@ -1107,6 +1107,29 @@ main(int argc, char **argv)
 		if (!hostfs_set) {
 			using_hostfs = false;
 		}
+// loading sdcard image to memory, commented out
+#if 0
+		FILE *sdf = fopen(sdcard_path, "rb");
+		if (!sdf) {
+			perror(sdcard_path);
+		} else {
+			fseek(sdf, 0, SEEK_END);
+			size_t sdf_size = ftell(sdf);
+			fseek(sdf, 0, SEEK_SET);
+			uint8_t *sdf_content = malloc(sizeof(uint8_t) * sdf_size);
+			if (!sdf_content) {
+				printf("failed to alloc SD card content\n");
+			} else {
+				fread(sdf_content, sdf_size, sizeof(uint8_t), sdf);
+				sdcard_load_from_memory(sdf_content, sdf_size);
+				//free(sdf);
+				if (!hostfs_set) {
+					using_hostfs = false;
+				}
+			}
+			fclose(sdf);
+		}
+#endif
 	}
 
 	if (using_hostfs && !audio_buffers_set) {
@@ -1593,9 +1616,11 @@ emulator_loop(void *param)
 		}
 #endif
 
+		/*
 		if (handle_ieee_intercept()) {
 			continue;
 		}
+		*/
 
 		instruction_counter += waiting ^ 0x1;
 

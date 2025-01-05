@@ -16,19 +16,22 @@
 
 struct x16file
 {
-	char path[PATH_MAX];
+	char path[PATH_MAX]; // if in_memory is false
 
-	SDL_RWops *file;
+	SDL_RWops *file; // if in_memory is false
+
 	int64_t size;
 	int64_t pos;
 	bool modified;
+	bool in_memory;
+	uint8_t *content; // use only if in_memory is true
 
 	struct x16file *next;
 };
 
 struct x16file *open_files = NULL;
 
-static bool 
+static bool
 get_tmp_name(char *path_buffer, const char *original_path, char const *extension)
 {
 	if(strlen(original_path) > PATH_MAX - strlen(extension)) {
@@ -42,7 +45,7 @@ get_tmp_name(char *path_buffer, const char *original_path, char const *extension
 	return true;
 }
 
-bool 
+bool
 file_is_compressed_type(char const *path)
 {
 	int len = (int)strlen(path);
@@ -96,6 +99,9 @@ struct x16file *
 x16open(const char *path, const char *attribs)
 {
 	struct x16file *f = malloc(sizeof(struct x16file));
+	if (!f) return NULL;
+
+	f->in_memory = false;
 	strcpy(f->path, path);
 
 	if(file_is_compressed_type(path)) {
@@ -167,88 +173,121 @@ error:
 	return NULL;
 }
 
-void 
+struct x16file *
+x16open_to_memory(const char *path, uint8_t *content, size_t content_size)
+{
+	struct x16file *f = malloc(sizeof(struct x16file));
+	if (!f) return NULL;
+
+	f->in_memory = true;
+	strcpy(f->path, path);
+
+	f->content = malloc(sizeof(content[0]) * content_size);
+	if (!f->content) {
+		goto error;
+	}
+
+	memcpy(f->content, content, sizeof(content[0]) * content_size);
+
+	f->size = (int64_t)content_size;
+	f->pos = 0;
+	f->modified = false;
+	f->next = open_files ? open_files : NULL;
+	open_files = f;
+
+	return f;
+
+error:
+	free(f);
+	return NULL;
+}
+void
 x16close(struct x16file *f)
 {
 	if(f == NULL) {
 		return;
 	}
 
-	SDL_RWclose(f->file);
-
-	if(file_is_compressed_type(f->path)) {
-		char tmp_path[PATH_MAX];
-		if(!get_tmp_name(tmp_path, f->path, ".tmp")) {
-			printf("Path too long, cannot create temp file: %s\n", f->path);
-			goto tmp_path_error;
-		}
-
-		if(f->modified == false) {
-			goto zfile_clean;
-		}
-
-		gzFile zfile = gzopen(f->path, "wb6");
-		if(zfile == Z_NULL) {
-			printf("Could not open file for compression: %s\n", f->path);
-			goto zfile_error;
-		}
-
-		SDL_RWops *tfile = SDL_RWFromFile(tmp_path, "rb");
-		if(tfile == NULL) {
-			gzclose(zfile);
-			printf("Could not open file for read: %s\n", tmp_path);
-			goto tfile_error;
-		}
-
-		printf("Recompressing %s\n", f->path);
-
-		const int buffer_size = 16 * 1024 * 1024;
-		char *buffer = malloc(buffer_size);
-
-		const int64_t progress_increment = 128 * 1024 * 1024;
-		int64_t progress_threshold = progress_increment;
-		int read = SDL_RWread(tfile, buffer, 1, buffer_size);
-		int64_t total_read = read;
-		while(read > 0) {
-			if(total_read > progress_threshold) {
-				printf("%d%%\n", (int)(total_read * 100 / f->size));
-				progress_threshold += progress_increment;
-			}
-			gzwrite(zfile, buffer, read);
-			read = SDL_RWread(tfile, buffer, 1, buffer_size);
-			total_read += read;
-		}
-
-		free(buffer);
-
-		if(tfile != NULL) {
-			SDL_RWclose(tfile);
-		}
-
-	tfile_error:
-		if(zfile != Z_NULL) {
-			gzclose(zfile);
-		}
-
-	zfile_error: // fall-through
-	zfile_clean:
-		unlink(tmp_path);
-	}
-tmp_path_error:
-	if(f == open_files) {
-		open_files = f->next;
+	if (f->in_memory) {
+		free(f->content);
+		return;
 	} else {
-		for(struct x16file *fi = open_files; fi != NULL; fi = fi->next) {
-			if(fi->next == f) {
-				fi->next = f->next;
-				break;
+		SDL_RWclose(f->file);
+
+		if(file_is_compressed_type(f->path)) {
+			char tmp_path[PATH_MAX];
+			if(!get_tmp_name(tmp_path, f->path, ".tmp")) {
+				printf("Path too long, cannot create temp file: %s\n", f->path);
+				goto tmp_path_error;
+			}
+
+			if(f->modified == false) {
+				goto zfile_clean;
+			}
+
+			gzFile zfile = gzopen(f->path, "wb6");
+			if(zfile == Z_NULL) {
+				printf("Could not open file for compression: %s\n", f->path);
+				goto zfile_error;
+			}
+
+			SDL_RWops *tfile = SDL_RWFromFile(tmp_path, "rb");
+			if(tfile == NULL) {
+				gzclose(zfile);
+				printf("Could not open file for read: %s\n", tmp_path);
+				goto tfile_error;
+			}
+
+			printf("Recompressing %s\n", f->path);
+
+			const int buffer_size = 16 * 1024 * 1024;
+			char *buffer = malloc(buffer_size);
+
+			const int64_t progress_increment = 128 * 1024 * 1024;
+			int64_t progress_threshold = progress_increment;
+			int read = SDL_RWread(tfile, buffer, 1, buffer_size);
+			int64_t total_read = read;
+			while(read > 0) {
+				if(total_read > progress_threshold) {
+					printf("%d%%\n", (int)(total_read * 100 / f->size));
+					progress_threshold += progress_increment;
+				}
+				gzwrite(zfile, buffer, read);
+				read = SDL_RWread(tfile, buffer, 1, buffer_size);
+				total_read += read;
+			}
+
+			free(buffer);
+
+			if(tfile != NULL) {
+				SDL_RWclose(tfile);
+			}
+
+		tfile_error:
+			if(zfile != Z_NULL) {
+				gzclose(zfile);
+			}
+
+		zfile_error: // fall-through
+		zfile_clean:
+			unlink(tmp_path);
+		}
+	tmp_path_error:
+		if(f == open_files) {
+			open_files = f->next;
+		} else {
+			for(struct x16file *fi = open_files; fi != NULL; fi = fi->next) {
+				if(fi->next == f) {
+					fi->next = f->next;
+					break;
+				}
 			}
 		}
+		free(f);
 	}
-	free(f);
 }
 
-int64_t 
+int64_t
 x16size(struct x16file *f)
 {
 	if(f == NULL) {
@@ -258,7 +297,7 @@ x16size(struct x16file *f)
 	return f->size;
 }
 
-int 
+int
 x16seek(struct x16file *f, int64_t pos, int origin)
 {
 	if(f == NULL) {
@@ -280,10 +319,15 @@ x16seek(struct x16file *f, int64_t pos, int origin)
 				f->pos = f->size;
 			}
 	}
-	return SDL_RWseek(f->file, f->pos, SEEK_SET);
+
+	if (f->in_memory) {
+		return f->pos;
+	} else {
+		return SDL_RWseek(f->file, f->pos, SEEK_SET);
+	}
 }
 
-int64_t 
+int64_t
 x16tell(struct x16file *f)
 {
 	if(f == NULL) {
@@ -292,36 +336,55 @@ x16tell(struct x16file *f)
 	return f->pos;
 }
 
-int 
+int
 x16write8(struct x16file *f, uint8_t val)
 {
 	if(f == NULL) {
 		return 0;
 	}
-	int written = SDL_RWwrite(f->file, &val, 1, 1);
+	int written = 0;
+	if (f->in_memory) {
+		f->content[f->pos] = val;
+		written = 1;
+	} else {
+		written = SDL_RWwrite(f->file, &val, 1, 1);
+	}
 	f->pos += written;
 	return written;
 }
 
-uint8_t 
+uint8_t
 x16read8(struct x16file *f)
 {
 	if(f == NULL) {
 		return 0;
 	}
 	uint8_t val;
-	int read = SDL_RWread(f->file, &val, 1, 1);
+	int read = 0;
+	if (f->in_memory) {
+		val = f->content[f->pos];
+		read = 1;
+	} else {
+		read = SDL_RWread(f->file, &val, 1, 1);
+	}
 	f->pos += read;
-	return read;
+	return val;
 }
-
-uint64_t 
+#define files_min(x, y) (((x) < (y)) ? (x) : (y))
+uint64_t
 x16write(struct x16file *f, const uint8_t *data, uint64_t data_size, uint64_t data_count)
 {
 	if(f == NULL) {
 		return 0;
 	}
-	int64_t written = SDL_RWwrite(f->file, data, data_size, data_count);
+	int64_t written = 0;
+	if (f->in_memory) {
+		size_t to_write = files_min(data_size * data_count, f->size);
+		memcpy(&f->content[f->pos], data, to_write);
+		written = to_write / data_count;
+	} else {
+		written = SDL_RWwrite(f->file, data, data_size, data_count);
+	}
 	if(written) {
 		f->modified = true;
 	}
@@ -329,13 +392,20 @@ x16write(struct x16file *f, const uint8_t *data, uint64_t data_size, uint64_t da
 	return written;
 }
 
-uint64_t 
+uint64_t
 x16read(struct x16file *f, uint8_t *data, uint64_t data_size, uint64_t data_count)
 {
 	if(f == NULL) {
 		return 0;
 	}
-	int64_t read = SDL_RWread(f->file, data, data_size, data_count);
+	int64_t read = 0;
+	if (f->in_memory) {
+		size_t to_read = files_min(data_size * data_count, f->size);
+		memcpy(data, &f->content[f->pos], to_read);
+		read = to_read / data_count;
+	} else {
+		read = SDL_RWread(f->file, data, data_size, data_count);
+	}
 	f->pos += read * data_size;
 	return read;
 }

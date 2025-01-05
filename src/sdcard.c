@@ -70,6 +70,13 @@ sdcard_set_path(char const *path)
 	sdcard_attach();
 }
 
+void
+sdcard_load_from_memory(uint8_t *content, size_t content_size)
+{
+	sdcard_detach();
+	sdcard_attach_from_memory(content, content_size);
+}
+
 bool
 sdcard_path_is_set()
 {
@@ -87,6 +94,22 @@ sdcard_attach()
 		}
 
 		printf("SD card attached.\n");
+		sdcard_attached = true;
+		is_initialized = false;
+	}
+}
+
+void
+sdcard_attach_from_memory(uint8_t *content, size_t content_size)
+{
+	if (!sdcard_attached) {
+		sdcard_file = x16open_to_memory("/fakepath.img", content, content_size);
+		if(sdcard_file == NULL) {
+			printf("Cannot open SDCard file from memory!\n");
+			return;
+		}
+
+		printf("SD card attached from memory.\n");
 		sdcard_attached = true;
 		is_initialized = false;
 	}
@@ -328,8 +351,12 @@ sdcard_handle(uint8_t inbyte)
 			response_counter = 0;
 
 #if defined(VERBOSE) && VERBOSE >= 2
-			for (int i = 0; i < (response_length < 16 ? response_length : 16); i++) {
-				printf(" %02X", response[i]);
+			if (!response) {
+				printf(" response is NULL");
+			} else {
+				for (int i = 0; i < (response_length < 16 ? response_length : 16); i++) {
+					printf(" %02X", response[i]);
+				}
 			}
 			printf("\n");
 #endif

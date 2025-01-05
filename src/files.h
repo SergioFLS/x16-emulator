@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 struct x16file;
 
@@ -13,6 +14,7 @@ const char *file_find_extension(const char *path, const char *mark);
 void files_shutdown();
 
 struct x16file *x16open(const char *path, const char *attribs);
+struct x16file *x16open_to_memory(const char *path, uint8_t *content, size_t content_size);
 void x16close(struct x16file *f);
 
 int64_t x16size(struct x16file *f);

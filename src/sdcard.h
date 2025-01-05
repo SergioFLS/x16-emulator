@@ -9,8 +9,10 @@
 
 extern bool sdcard_attached;
 void sdcard_set_path(char const *path);
+void sdcard_load_from_memory(uint8_t *content, size_t content_size);
 bool sdcard_path_is_set();
 void sdcard_attach();
+void sdcard_attach_from_memory(uint8_t *content, size_t content_size);
 void sdcard_detach();
 
 void sdcard_select(bool select);

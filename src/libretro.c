@@ -383,6 +383,9 @@ retro_load_game(const struct retro_game_info *info)
 	}
 
 	check_variables();
+	if (info) {
+		sdcard_load_from_memory((uint8_t*)info->data, info->size);
+	}
 	machine_reset();
 
 	(void)info;
